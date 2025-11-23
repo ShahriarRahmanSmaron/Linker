@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FabricFilter } from '../types';
 import { Filter, X, SlidersHorizontal, ChevronDown } from 'lucide-react';
 
@@ -10,6 +10,32 @@ interface SearchFiltersProps {
 
 export const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, setFilters }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [fabricGroups, setFabricGroups] = useState<string[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+
+  // Fetch fabric groups from backend on mount
+  useEffect(() => {
+    const fetchFabricGroups = async () => {
+      try {
+        setIsLoadingGroups(true);
+        const response = await fetch('/api/fabric-groups');
+        if (response.ok) {
+          const groups = await response.json();
+          setFabricGroups(groups);
+        } else {
+          console.error('Failed to fetch fabric groups');
+          setFabricGroups([]);
+        }
+      } catch (error) {
+        console.error('Error fetching fabric groups:', error);
+        setFabricGroups([]);
+      } finally {
+        setIsLoadingGroups(false);
+      }
+    };
+
+    fetchFabricGroups();
+  }, []);
 
   const handleChange = (key: keyof FabricFilter, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -25,14 +51,13 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, setFilter
   const renderFabricationOptions = () => (
     <>
       <option value="">All Fabrications</option>
-      <option value="Single Jersey">Single Jersey</option>
-      <option value="Pique">Pique</option>
-      <option value="Fleece">Fleece</option>
-      <option value="Rib">Rib</option>
-      <option value="Interlock">Interlock</option>
-      <option value="Terry">Terry</option>
-      <option value="Mesh">Mesh</option>
-      <option value="Thermal">Thermal</option>
+      {isLoadingGroups ? (
+        <option disabled>Loading...</option>
+      ) : (
+        fabricGroups.map(group => (
+          <option key={group} value={group}>{group}</option>
+        ))
+      )}
     </>
   );
 

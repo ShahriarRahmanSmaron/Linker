@@ -1,17 +1,23 @@
 
 export interface Fabric {
-  id: string;
-  name: string;
+  ref: string; // Backend uses 'ref' as ID
   fabrication: string;
-  gsm: number;
-  composition: string;
-  supplier: string;
-  color: string; // hex for mock
-  badges: string[];
-  mockupCategories: string[];
-  type?: string; // e.g., 'Natural', 'Synthetic', 'Blend'
-  price?: string;
+  group_name: string; // Backend returns group_name
+  style?: string;
+  width?: string;
+  gsm: string; // Backend returns as string
   moq?: string;
+  swatchUrl: string | null; // Backend provides swatch URL
+  // Legacy fields for compatibility (optional)
+  id?: string;
+  name?: string;
+  composition?: string;
+  supplier?: string;
+  color?: string;
+  badges?: string[];
+  mockupCategories?: string[];
+  type?: string;
+  price?: string;
   leadTime?: string;
 }
 
