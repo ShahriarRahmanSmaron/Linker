@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Fabric } from '../types';
 import { X, ChevronUp, ChevronDown, Layout, Trash2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { toast } from 'sonner';
 
 interface SelectionPanelProps {
   selectedFabrics: Fabric[];
@@ -96,18 +98,22 @@ export const SelectionPanel: React.FC<SelectionPanelProps> = ({ selectedFabrics,
 
       {/* Footer Actions */}
       <div className="p-4 border-t border-neutral-100 bg-white rounded-b-2xl">
-        <button
-          className="w-full bg-neutral-900 text-white py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-neutral-900/10 hover:bg-black hover:scale-[1.02] hover:shadow-2xl hover:shadow-neutral-900/20 active:scale-95 transition-all duration-200 mb-3 flex items-center justify-center"
-          onClick={() => alert('Moodboard creation demo!')}
+        <Button
+          className="w-full bg-neutral-900 text-white py-3.5 rounded-xl font-bold text-sm shadow-xl shadow-neutral-900/10 hover:bg-black hover:scale-[1.02] hover:shadow-2xl hover:shadow-neutral-900/20 active:scale-95 transition-all duration-200 mb-3"
+          onClick={() => toast.success('Moodboard creation demo!', {
+            description: `${selectedFabrics.length} fabrics selected`,
+          })}
         >
           Create Moodboard
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onClear}
-          className="w-full flex items-center justify-center text-neutral-400 text-xs font-medium hover:text-red-500 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+          className="w-full flex items-center justify-center text-neutral-400 text-xs font-medium hover:text-red-500 py-1.5 rounded-lg hover:bg-red-50"
         >
           <Trash2 size={12} className="mr-1.5" /> Clear Selection
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Fabric } from '../types';
 import { X, Shirt, ZoomIn, Check, Plus, Loader2, ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogOverlay } from './ui/dialog';
+import { Button } from './ui/button';
 
 interface MockupModalProps {
   fabric: Fabric | null;
@@ -166,19 +168,25 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
   const categoryGarments = garments[selectedCategory] || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Heavily blurred background - showing underlying website */}
-      <div 
-        className="absolute inset-0 backdrop-blur-[40px] bg-black/10 transition-opacity duration-300" 
-        onClick={onClose}
+    <Dialog open={!!fabric} onOpenChange={(open) => !open && onClose()}>
+      <DialogOverlay 
+        className="backdrop-blur-[40px] bg-black/10"
         style={{
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)'
         }}
-      ></div>
-      
-      {/* Glassmorphism Modal with green light refractions */}
-      <div className="relative max-w-4xl w-full max-h-[95vh] overflow-hidden animate-fade-in transform transition-all">
+        onClick={onClose}
+      />
+      <DialogContent 
+        className="max-w-4xl max-h-[95vh] p-0 overflow-hidden border-0 bg-transparent backdrop-blur-none shadow-none [&>button]:hidden"
+        style={{
+          background: 'transparent',
+        }}
+        hideOverlay={true}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        {/* Glassmorphism Modal with green light refractions */}
+        <div className="relative max-w-4xl w-full max-h-[95vh] overflow-hidden animate-fade-in transform transition-all">
         {/* Glass container with frosted effect and green edge highlights */}
         <div 
           className="relative rounded-3xl overflow-hidden"
@@ -223,13 +231,15 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                 <p className="text-xs text-[#111827]/70">(Select garment, visualize and save)</p>
               </div>
               
-        <button 
+        <Button 
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-                className="p-2 rounded-full hover:bg-white/20 text-[#111827]/60 hover:text-[#111827] transition-all duration-200 active:scale-90"
-                style={{ backdropFilter: 'blur(10px)' }}
+            className="p-2 rounded-full hover:bg-white/20 text-[#111827]/60 hover:text-[#111827] transition-all duration-200 active:scale-90"
+            style={{ backdropFilter: 'blur(10px)' }}
         >
             <X size={20} />
-        </button>
+        </Button>
                 </div>
                 
             {/* Main Content Area - Sidebar + Grid Layout */}
@@ -264,7 +274,7 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                       <div className="flex flex-col items-center justify-center py-20">
                         <Loader2 className="h-12 w-12 text-[#0E6FFF] animate-spin mb-4" />
                         <p className="text-[#111827]/70 font-medium">Loading garments...</p>
-                    </div>
+            </div>
                     )}
 
                     {/* Garment Grid */}
@@ -341,13 +351,15 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                 <div className="flex flex-col w-full h-full">
                   {/* Back Button */}
                   <div className="px-6 pt-2 pb-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={handleBack}
-                      className="flex items-center text-[#111827]/70 hover:text-[#111827] transition-colors font-medium text-sm"
+                      className="flex items-center text-[#111827]/70 hover:text-[#111827] transition-colors font-medium"
                     >
                       <ArrowLeft size={16} className="mr-1" />
                       Back to Selection
-                    </button>
+                    </Button>
             </div>
 
                   {/* Mockup Preview Area */}
@@ -374,13 +386,12 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                         </div>
                         <p className="text-red-600 font-medium mb-2">Failed to generate mockup</p>
                         <p className="text-[#111827]/60 text-sm mb-4">{error}</p>
-                        <button
+                        <Button
                           onClick={handleBack}
-                          className="px-4 py-2 bg-[#0E6FFF] text-white rounded-lg hover:bg-[#0E6FFF]/90 transition-colors"
-                          style={{ backdropFilter: 'blur(10px)' }}
+                          className="px-4 py-2"
                         >
                           Try Another Garment
-                        </button>
+                        </Button>
                       </div>
                     )}
 
@@ -427,28 +438,24 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                           {mockupData.views.length > 1 && (
                             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                               {mockupData.views.includes('face') && (
-                                <button
+                                <Button
                                   onClick={() => setCurrentView('face')}
-                                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                    currentView === 'face'
-                                      ? 'bg-[#0E6FFF] text-white shadow-lg'
-                                      : 'bg-white/30 text-[#111827] hover:bg-white/50 backdrop-blur-sm'
-                                  }`}
+                                  variant={currentView === 'face' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={currentView === 'face' ? '' : 'bg-white/30 text-[#111827] hover:bg-white/50 backdrop-blur-sm border-white/30'}
                                 >
                                   Front
-                                </button>
+                                </Button>
                               )}
                               {mockupData.views.includes('back') && (
-                <button 
+                                <Button 
                                   onClick={() => setCurrentView('back')}
-                                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                    currentView === 'back'
-                                      ? 'bg-[#0E6FFF] text-white shadow-lg'
-                                      : 'bg-white/30 text-[#111827] hover:bg-white/50 backdrop-blur-sm'
-                                  }`}
+                                  variant={currentView === 'back' ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={currentView === 'back' ? '' : 'bg-white/30 text-[#111827] hover:bg-white/50 backdrop-blur-sm border-white/30'}
                                 >
                                   Back
-                                </button>
+                                </Button>
                               )}
                             </div>
                           )}
@@ -458,81 +465,63 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
                         {mockupData.views.length > 1 && (
                           <div className="mt-6 flex gap-3 justify-center">
                             {mockupData.views.includes('face') && mockupData.mockups.face && (
-                              <button
+                              <Button
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = mockupData.mockups.face!;
                                   link.download = `${fabricName}_front.jpg`;
                                   link.click();
                                 }}
-                                className="px-6 py-3 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
-                                style={{
-                                  background: 'rgba(255, 255, 255, 0.3)',
-                                  backdropFilter: 'blur(10px)',
-                                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                                  color: '#111827',
-                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                }}
-                >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                variant="outline"
+                                className="px-6 py-3 backdrop-blur-sm border-white/40 bg-white/30 hover:bg-white/50"
+                              >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                                 Download Front
-                              </button>
+                              </Button>
                             )}
                             {mockupData.views.includes('back') && mockupData.mockups.back && (
-                              <button
+                              <Button
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = mockupData.mockups.back!;
                                   link.download = `${fabricName}_back.jpg`;
                                   link.click();
                                 }}
-                                className="px-6 py-3 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
-                                style={{
-                                  background: 'rgba(255, 255, 255, 0.3)',
-                                  backdropFilter: 'blur(10px)',
-                                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                                  color: '#111827',
-                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                }}
+                                variant="outline"
+                                className="px-6 py-3 backdrop-blur-sm border-white/40 bg-white/30 hover:bg-white/50"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                                 Download Back
-                </button>
+                              </Button>
                             )}
                           </div>
                         )}
                         {mockupData.views.length === 1 && mockupData.mockups.single && (
                           <div className="mt-6 flex justify-center">
-                            <button
+                            <Button
                               onClick={() => {
                                 const link = document.createElement('a');
                                 link.href = mockupData.mockups.single!;
                                 link.download = `${fabricName}_mockup.jpg`;
                                 link.click();
                               }}
-                              className="px-6 py-3 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.3)',
-                                backdropFilter: 'blur(10px)',
-                                border: '1px solid rgba(255, 255, 255, 0.4)',
-                                color: '#111827',
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                              }}
+                              variant="outline"
+                              className="px-6 py-3 backdrop-blur-sm border-white/40 bg-white/30 hover:bg-white/50"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                               </svg>
                               Download Mockup
-                </button>
+                            </Button>
                           </div>
                         )}
                       </div>
                     )}
-            </div>
+        </div>
 
                 </div>
               )}
@@ -540,6 +529,7 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
             </div>
         </div>
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

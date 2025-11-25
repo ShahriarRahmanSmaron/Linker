@@ -18,6 +18,7 @@ import { ManufacturerDashboard } from './components/manufacturer/ManufacturerDas
 import { LoginPage } from './components/LoginPage';
 import { AuthProvider } from './components/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from './components/ui/sonner';
 
 const LandingPage: React.FC = () => {
   return (
@@ -73,6 +74,7 @@ const App: React.FC = () => {
     <Router>
       <AuthProvider>
         <AppRoutes />
+        <Toaster />
       </AuthProvider>
     </Router>
   );
