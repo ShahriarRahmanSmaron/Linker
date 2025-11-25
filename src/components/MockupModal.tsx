@@ -4,6 +4,7 @@ import { Fabric } from '../types';
 import { X, Shirt, ZoomIn, Check, Plus, Loader2, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogOverlay } from './ui/dialog';
 import { Button } from './ui/button';
+import { Progress } from './ui/progress';
 
 interface MockupModalProps {
   fabric: Fabric | null;
@@ -364,11 +365,32 @@ export const MockupModal: React.FC<MockupModalProps> = ({ fabric, isSelected, on
 
                   {/* Mockup Preview Area */}
                   <div className="flex-1 flex items-center justify-center p-8 pt-4 min-h-[400px] overflow-auto">
-                    {/* Loading State */}
+                    {/* Loading State with Progress */}
                     {isGenerating && (
-                      <div className="flex flex-col items-center justify-center">
-                        <Loader2 className="h-16 w-16 text-[#0E6FFF] animate-spin mb-4" />
-                        <p className="text-[#111827]/70 font-medium">Generating mockup...</p>
+                      <div className="flex flex-col items-center justify-center w-full max-w-md px-6">
+                        <div 
+                          className="p-4 rounded-full mb-6"
+                          style={{
+                            background: 'rgba(37, 99, 235, 0.1)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(37, 99, 235, 0.2)',
+                          }}
+                        >
+                          <Loader2 className="h-12 w-12 text-[#0E6FFF] animate-spin" />
+                        </div>
+                        <p className="text-[#111827]/70 dark:text-white/70 font-medium mb-6 text-center text-lg">Generating mockup...</p>
+                        <div className="w-full mb-2">
+                          <Progress 
+                            value={undefined} 
+                            className="h-2.5 rounded-full overflow-hidden"
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              backdropFilter: 'blur(10px)',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                            }}
+                          />
+                        </div>
+                        <p className="text-[#111827]/50 dark:text-white/50 text-sm text-center">Processing fabric visualization...</p>
                       </div>
                     )}
 

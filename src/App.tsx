@@ -20,6 +20,7 @@ import { AuthProvider } from './components/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LightModeWrapper } from './components/LightModeWrapper';
 
 const LandingPage: React.FC = () => {
   return (
@@ -47,13 +48,15 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LightModeWrapper><LoginPage /></LightModeWrapper>} />
       
       <Route 
         path="/search" 
         element={
           <ProtectedRoute allowedRole="buyer">
-            <SearchPage />
+            <LightModeWrapper>
+              <SearchPage />
+            </LightModeWrapper>
           </ProtectedRoute>
         } 
       />
@@ -62,7 +65,9 @@ const AppRoutes: React.FC = () => {
         path="/manufacturer-dashboard" 
         element={
           <ProtectedRoute allowedRole="manufacturer">
-            <ManufacturerDashboard />
+            <LightModeWrapper>
+              <ManufacturerDashboard />
+            </LightModeWrapper>
           </ProtectedRoute>
         } 
       />
