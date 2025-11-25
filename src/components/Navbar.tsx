@@ -42,11 +42,20 @@ export const Navbar: React.FC = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="bg-primary-50/80 backdrop-blur-sm p-1.5 rounded-lg mr-2 group-hover:bg-primary-100 transition-colors">
-                <Layers className="h-6 w-6 text-primary-600" />
+            <div className={`backdrop-blur-sm p-1.5 rounded-lg mr-2 transition-colors ${
+              isScrolled 
+                ? 'bg-primary-50/80 group-hover:bg-primary-100' 
+                : 'bg-white/10 group-hover:bg-white/20'
+            }`}>
+                <Layers className={`h-6 w-6 transition-colors ${
+                  isScrolled ? 'text-primary-600' : 'text-white'
+                }`} />
             </div>
-            <span className="text-xl font-extrabold text-neutral-900 tracking-tight">
-              <span className="text-primary-600">Link</span><span className="text-accent-500">ER</span>
+            <span className={`text-xl font-extrabold tracking-tight transition-colors ${
+              isScrolled ? 'text-neutral-900' : 'text-white'
+            }`}>
+              <span className={isScrolled ? 'text-primary-600' : 'text-primary-300'}>Link</span>
+              <span className={isScrolled ? 'text-accent-500' : 'text-accent-400'}>ER</span>
             </span>
           </div>
 
@@ -56,7 +65,11 @@ export const Navbar: React.FC = () => {
               <button
                 key={link.id}
                 onClick={() => handleNavClick(link.id)}
-                className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition-colors duration-200"
+                className={`text-sm font-medium transition-colors duration-200 ${
+                  isScrolled 
+                    ? 'text-neutral-600 hover:text-primary-600' 
+                    : 'text-white hover:text-primary-300'
+                }`}
               >
                 {link.label}
               </button>
@@ -75,7 +88,11 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Menu Toggle */}
           <div className="md:hidden">
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-neutral-500 hover:text-primary-600 transition-colors">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className={`transition-colors ${
+              isScrolled 
+                ? 'text-neutral-500 hover:text-primary-600' 
+                : 'text-white hover:text-primary-300'
+            }`}>
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
