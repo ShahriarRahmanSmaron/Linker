@@ -7,6 +7,7 @@ interface FabricUploadFormProps {
   initialData?: ManufacturerFabric | null;
   onSave: (data: Partial<ManufacturerFabric>) => void;
   onCancelEdit: () => void;
+  onFormChange?: (data: Partial<ManufacturerFabric>) => void;
 }
 
 const DEFAULT_FORM_STATE = {
@@ -28,7 +29,7 @@ const DEFAULT_FORM_STATE = {
     swatchImageUrl: ''
 };
 
-export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData, onSave, onCancelEdit }) => {
+export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData, onSave, onCancelEdit, onFormChange }) => {
   const [formData, setFormData] = useState<Partial<ManufacturerFabric>>(DEFAULT_FORM_STATE);
 
   useEffect(() => {
@@ -38,6 +39,12 @@ export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData,
         setFormData(DEFAULT_FORM_STATE);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (onFormChange) {
+      onFormChange(formData);
+    }
+  }, [formData, onFormChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -137,6 +144,17 @@ export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData,
                 </div>
             </div>
              <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Fabric Type *</label>
+                <select 
+                    name="fabricType" value={formData.fabricType} onChange={handleChange}
+                    className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
+                >
+                    {['100% Cotton', 'CVC', 'PC', 'Polyester', 'Cotton Spandex', 'Poly Spandex', 'Others'].map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                </select>
+            </div>
+            <div>
                 <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Composition</label>
                 <input 
                     type="text" name="composition"
@@ -144,6 +162,31 @@ export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData,
                     className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
                     placeholder="e.g. 95% Cotton / 5% Spandex"
                 />
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Category</label>
+                <div className="flex flex-wrap gap-2">
+                    {['Men', 'Women', 'Kids', 'Infant', 'Unisex'].map(cat => (
+                        <button 
+                            type="button" key={cat}
+                            onClick={() => handleMultiSelect('category', cat)}
+                            className={`px-3 py-1 text-xs rounded-full border transition-colors ${formData.category?.includes(cat) ? 'bg-primary-100 border-primary-200 text-primary-800 font-bold' : 'bg-white border-neutral-200 text-neutral-500'}`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Season</label>
+                <select 
+                    name="season" value={formData.season} onChange={handleChange}
+                    className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
+                >
+                    {['All Season', 'Spring/Summer', 'Fall/Winter'].map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                </select>
             </div>
         </div>
 
@@ -171,7 +214,7 @@ export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData,
             <div>
                  <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Certifications</label>
                  <div className="flex flex-wrap gap-2">
-                     {['GOTS', 'GRS', 'BCI', 'OEKO-TEX'].map(cert => (
+                     {['GOTS', 'GRS', 'BCI', 'OEKO-TEX', 'None'].map(cert => (
                          <button 
                             type="button" key={cert}
                             onClick={() => handleMultiSelect('certifications', cert)}
@@ -182,11 +225,67 @@ export const FabricUploadForm: React.FC<FabricUploadFormProps> = ({ initialData,
                      ))}
                  </div>
             </div>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Price Range (optional)</label>
+                <input 
+                    type="text" name="priceRange"
+                    value={formData.priceRange || ''} onChange={handleChange}
+                    className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
+                    placeholder="e.g., 4.2–4.8 USD/kg"
+                />
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Available Colorways</label>
+                <textarea 
+                    name="colorways"
+                    value={formData.colorways || ''} onChange={handleChange}
+                    className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
+                    placeholder="e.g., Black, White, Navy, Wine"
+                    rows={3}
+                />
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">Internal Notes</label>
+                <textarea 
+                    name="notes"
+                    value={formData.notes || ''} onChange={handleChange}
+                    className="w-full p-2.5 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-accent-500"
+                    placeholder="Any special finish, brushing, peaching, mercerizing etc."
+                    rows={3}
+                />
+            </div>
 
-            <div className="border-2 border-dashed border-neutral-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-neutral-50 transition-colors cursor-pointer">
-                 <Upload size={24} className="text-neutral-400 mb-2" />
-                 <span className="text-sm font-bold text-accent-600">Upload Swatch Image</span>
-                 <span className="text-xs text-neutral-400">JPG, PNG up to 5MB</span>
+            <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Swatch Image</label>
+                <label className="border-2 border-dashed border-neutral-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-neutral-50 transition-colors cursor-pointer">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                    setFormData(prev => ({ ...prev, swatchImageUrl: reader.result as string }));
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }}
+                    />
+                    {formData.swatchImageUrl ? (
+                        <div className="w-full">
+                            <img src={formData.swatchImageUrl} alt="Swatch preview" className="w-full h-32 object-cover rounded-lg mb-2" />
+                            <span className="text-xs text-accent-600">Click to change image</span>
+                        </div>
+                    ) : (
+                        <>
+                            <Upload size={24} className="text-neutral-400 mb-2" />
+                            <span className="text-sm font-bold text-accent-600">Upload Swatch Image</span>
+                            <span className="text-xs text-neutral-400">JPG, PNG up to 5MB</span>
+                        </>
+                    )}
+                </label>
             </div>
         </div>
       </div>

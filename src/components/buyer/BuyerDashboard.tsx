@@ -17,7 +17,15 @@ import {
   LogOut,
   Layers,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  MessageSquare,
+  Download,
+  Trash2,
+  Link as LinkIcon,
+  Building2,
+  Award,
+  CheckCircle2,
+  Send
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -29,46 +37,61 @@ import { MockupModal } from '../MockupModal';
 import { TechpackModal } from '../TechpackModal';
 import { Fabric, FabricFilter } from '../types';
 
-type DashboardView = 'dashboard' | 'fabric-library' | 'rfqs' | 'samples' | 'designs';
+type DashboardView = 'dashboard' | 'fabric-library' | 'rfqs' | 'samples' | 'workspace' | 'support';
 
 // Types
 interface BuyerDashboardData {
   buyer_dashboard: {
-    stats: {
-      active_rfqs: number;
-      samples_in_transit: number;
-      pending_actions: number;
+    user_profile: {
+      id: string;
+      company: string;
+      tier: string;
     };
-    recent_rfqs: RFQ[];
+    stats: {
+      open_rfqs: number;
+      samples_tracking: number;
+      unread_admin_messages: number;
+    };
+    private_workspace: {
+      saved_mockups: SavedMockup[];
+      moodboards: any[];
+    };
+    rfq_management: {
+      active_rfqs: ActiveRFQ[];
+    };
     sample_orders: SampleOrder[];
-    saved_designs: SavedDesign[];
+    support_inbox: {
+      active_threads: SupportThread[];
+    };
   };
 }
 
-interface RFQ {
+interface SavedMockup {
+  id: string;
+  name: string;
+  garment_type: string;
+  fabric_ref_used: string;
+  created_at: string;
+  preview_url: string;
+  actions: string[];
+}
+
+interface ActiveRFQ {
   rfq_id: string;
   title: string;
-  created_at?: string;
   status: string;
-  admin_note?: string | null;
-  attendance_count: number;
-  actions?: string[];
-  attendees_preview?: Attendee[];
+  posted_date: string;
+  expires_in: string;
+  admin_approval_status: string;
+  manufacturer_bids: ManufacturerBid[];
 }
 
-interface Attendee {
+interface ManufacturerBid {
+  manufacturer_id: string;
   manufacturer_name: string;
   bid_price: string;
-  rating: number;
-}
-
-interface SampleOrder {
-  order_id: string;
-  fabric_ref: string;
-  manufacturer: string;
-  status: string;
-  tracking_timeline: TrackingEvent[];
-  fee_status: string;
+  stock_status: string;
+  can_request_sample: boolean;
 }
 
 interface TrackingEvent {
@@ -78,67 +101,102 @@ interface TrackingEvent {
   details?: string;
 }
 
-interface SavedDesign {
-  id: string;
-  name: string;
-  preview_url: string;
-  linked_rfq_id?: string;
+interface SampleOrder {
+  order_id: string;
+  items: string[];
+  status: string;
+  tracking_number: string;
+  courier: string;
+  payment_status: string;
+  actions: string[];
+  tracking_timeline?: TrackingEvent[];
+}
+
+interface SupportThread {
+  thread_id: string;
+  subject: string;
+  last_message: string;
+  status: string;
+  recipient: string;
 }
 
 // Mock data
 const MOCK_DATA: BuyerDashboardData = {
   buyer_dashboard: {
-    stats: {
-      active_rfqs: 4,
-      samples_in_transit: 2,
-      pending_actions: 1
+    user_profile: {
+      id: "BUYER-882",
+      company: "Shahriar",
+      tier: "Gold"
     },
-    recent_rfqs: [
-      {
-        rfq_id: "RFQ-2024-88",
-        title: "Heavy GSM Cotton Fleece",
-        created_at: "2024-03-20T10:00:00Z",
-        status: "APPROVED_OPEN",
-        admin_note: "Approved, broadcast to 45 manufacturers.",
-        attendance_count: 12,
-        actions: ["view_attendees", "close_rfq"],
-        attendees_preview: [
-          { manufacturer_name: "FabCo Ltd", bid_price: "$4.50/yd", rating: 4.8 },
-          { manufacturer_name: "Textile Bros", bid_price: "$4.20/yd", rating: 4.2 }
-        ]
-      },
-      {
-        rfq_id: "RFQ-2024-90",
-        title: "Neon Polyester Mesh",
-        status: "PENDING_ADMIN_APPROVAL",
-        admin_note: null,
-        attendance_count: 0
-      }
-    ],
+    stats: {
+      open_rfqs: 3,
+      samples_tracking: 2,
+      unread_admin_messages: 1
+    },
+    private_workspace: {
+      saved_mockups: [
+        {
+          id: "MOCK-102",
+          name: "Summer 24 Polo Visualization",
+          garment_type: "Men Polo",
+          fabric_ref_used: "FAB-552",
+          created_at: "2024-03-25T10:00:00Z",
+          preview_url: "/static/private/user_882/mockup_102.jpg",
+          actions: ["download", "attach_to_rfq", "delete"]
+        }
+      ],
+      moodboards: []
+    },
+    rfq_management: {
+      active_rfqs: [
+        {
+          rfq_id: "RFQ-2024-99",
+          title: "100% Cotton Pique 220GSM",
+          status: "APPROVED_LIVE",
+          posted_date: "2024-03-20",
+          expires_in: "10 days",
+          admin_approval_status: "APPROVED",
+          manufacturer_bids: [
+            {
+              manufacturer_id: "MFG-01",
+              manufacturer_name: "Global Tex (Admin Verified)",
+              bid_price: "$4.50/yd",
+              stock_status: "Available",
+              can_request_sample: true
+            }
+          ]
+        }
+      ]
+    },
     sample_orders: [
       {
-        order_id: "SMP-999",
-        fabric_ref: "FabCo-Cotton-01",
-        manufacturer: "FabCo Ltd",
+        order_id: "SMP-500",
+        items: ["Sample: Global Tex Pique"],
         status: "SHIPPED",
+        tracking_number: "DEX-882910",
+        courier: "RedX",
+        payment_status: "PAID",
+        actions: ["mark_received", "report_issue"],
         tracking_timeline: [
           { status: "PLACED", timestamp: "2024-03-21T09:00:00Z", completed: true },
           { status: "PAID", timestamp: "2024-03-21T09:05:00Z", completed: true },
           { status: "PROCESSING", timestamp: "2024-03-22T14:00:00Z", completed: true },
-          { status: "SHIPPED", timestamp: "2024-03-23T08:30:00Z", completed: true, details: "Courier: Pathao, ID: 778899" },
+          { status: "SHIPPED", timestamp: "2024-03-23T08:30:00Z", completed: true, details: "Courier: RedX, ID: DEX-882910" },
           { status: "DELIVERED", timestamp: null, completed: false }
-        ],
-        fee_status: "PAID_HELD_BY_PLATFORM"
+        ]
       }
     ],
-    saved_designs: [
-      {
-        id: "MOCK-55",
-        name: "Summer Collection Hoodie",
-        preview_url: "/static/mockups/user_123_hoodie.jpg",
-        linked_rfq_id: "RFQ-2024-88"
-      }
-    ]
+    support_inbox: {
+      active_threads: [
+        {
+          thread_id: "T-101",
+          subject: "Inquiry about RFQ-2024-99",
+          last_message: "Admin: The manufacturer has confirmed they can match that color.",
+          status: "UNREAD",
+          recipient: "LINKER_ADMIN"
+        }
+      ]
+    }
   }
 };
 
@@ -172,13 +230,16 @@ export const BuyerDashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      'APPROVED_OPEN': { label: 'Open', variant: 'default' },
+      'APPROVED_LIVE': { label: 'Live', variant: 'default' },
+      'APPROVED': { label: 'Approved', variant: 'default' },
       'PENDING_ADMIN_APPROVAL': { label: 'Pending Approval', variant: 'secondary' },
       'SHIPPED': { label: 'Shipped', variant: 'default' },
       'DELIVERED': { label: 'Delivered', variant: 'default' },
       'PLACED': { label: 'Placed', variant: 'secondary' },
       'PAID': { label: 'Paid', variant: 'default' },
-      'PROCESSING': { label: 'Processing', variant: 'secondary' }
+      'PROCESSING': { label: 'Processing', variant: 'secondary' },
+      'UNREAD': { label: 'Unread', variant: 'secondary' },
+      'READ': { label: 'Read', variant: 'outline' }
     };
 
     const statusInfo = statusMap[status] || { label: status, variant: 'outline' as const };
@@ -187,6 +248,16 @@ export const BuyerDashboard: React.FC = () => {
         {statusInfo.label}
       </Badge>
     );
+  };
+
+  const getTierBadge = (tier: string) => {
+    const tierColors: Record<string, string> = {
+      'Gold': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'Silver': 'bg-gray-100 text-gray-800 border-gray-200',
+      'Bronze': 'bg-orange-100 text-orange-800 border-orange-200',
+      'Platinum': 'bg-purple-100 text-purple-800 border-purple-200'
+    };
+    return tierColors[tier] || 'bg-neutral-100 text-neutral-800 border-neutral-200';
   };
 
   // Fetch fabrics for search
@@ -250,7 +321,6 @@ export const BuyerDashboard: React.FC = () => {
 
   // Auto-collapse sidebar when user interacts with content area
   const handleContentClick = (e: React.MouseEvent) => {
-    // Don't collapse if clicking on the toggle button or sidebar
     const target = e.target as HTMLElement;
     const isToggleButton = target.closest('[data-sidebar-toggle]');
     const isSidebar = target.closest('[data-sidebar]');
@@ -265,7 +335,8 @@ export const BuyerDashboard: React.FC = () => {
     { id: 'dashboard' as DashboardView, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'rfqs' as DashboardView, label: 'RFQs', icon: FileText },
     { id: 'samples' as DashboardView, label: 'Samples', icon: Package },
-    { id: 'designs' as DashboardView, label: 'Saved Designs', icon: ImageIcon },
+    { id: 'workspace' as DashboardView, label: 'Private Workspace', icon: ImageIcon },
+    { id: 'support' as DashboardView, label: 'Support Inbox', icon: MessageSquare },
   ];
 
   const renderContent = () => {
@@ -374,13 +445,32 @@ export const BuyerDashboard: React.FC = () => {
               <p className="text-neutral-500">Overview of your RFQs, samples, and activities</p>
             </div>
 
+            {/* User Profile Card */}
+            <Card className="p-6 bg-white border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary-50 rounded-full">
+                    <Building2 className="w-6 h-6 text-primary-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900">{data.buyer_dashboard.user_profile.company}</h3>
+                    <p className="text-sm text-neutral-500">ID: {data.buyer_dashboard.user_profile.id}</p>
+                  </div>
+                </div>
+                <Badge className={`${getTierBadge(data.buyer_dashboard.user_profile.tier)} border`}>
+                  <Award className="w-3 h-3 mr-1" />
+                  {data.buyer_dashboard.user_profile.tier} Tier
+                </Badge>
+              </div>
+            </Card>
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="p-6 bg-white border border-neutral-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-500 mb-1">Active RFQs</p>
-                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.active_rfqs}</p>
+                    <p className="text-sm font-medium text-neutral-500 mb-1">Open RFQs</p>
+                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.open_rfqs}</p>
                   </div>
                   <div className="p-3 bg-primary-50 rounded-full">
                     <FileText className="w-6 h-6 text-primary-600" />
@@ -391,8 +481,8 @@ export const BuyerDashboard: React.FC = () => {
               <Card className="p-6 bg-white border border-neutral-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-500 mb-1">Samples in Transit</p>
-                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.samples_in_transit}</p>
+                    <p className="text-sm font-medium text-neutral-500 mb-1">Samples Tracking</p>
+                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.samples_tracking}</p>
                   </div>
                   <div className="p-3 bg-accent-50 rounded-full">
                     <Truck className="w-6 h-6 text-accent-600" />
@@ -403,42 +493,53 @@ export const BuyerDashboard: React.FC = () => {
               <Card className="p-6 bg-white border border-neutral-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-500 mb-1">Pending Actions</p>
-                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.pending_actions}</p>
+                    <p className="text-sm font-medium text-neutral-500 mb-1">Unread Messages</p>
+                    <p className="text-3xl font-bold text-neutral-900">{data.buyer_dashboard.stats.unread_admin_messages}</p>
                   </div>
                   <div className="p-3 bg-warning-50 rounded-full">
-                    <AlertCircle className="w-6 h-6 text-warning-400" />
+                    <MessageSquare className="w-6 h-6 text-warning-400" />
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* Recent RFQs */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-neutral-900">Recent RFQs</h2>
-                <Button variant="outline" size="sm" onClick={() => setActiveView('rfqs')}>View All</Button>
-              </div>
-              <div className="space-y-4">
-                {data.buyer_dashboard.recent_rfqs.slice(0, 2).map((rfq) => (
-                  <Card key={rfq.rfq_id} className="p-6 bg-white border border-neutral-200">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-neutral-900">{rfq.title}</h3>
-                          {getStatusBadge(rfq.status)}
-                        </div>
-                        <p className="text-sm text-neutral-500">RFQ ID: {rfq.rfq_id}</p>
+            {/* Quick Links */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card className="p-6 bg-white border border-neutral-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-neutral-900">Active RFQs</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveView('rfqs')}>View All</Button>
+                </div>
+                <div className="space-y-3">
+                  {data.buyer_dashboard.rfq_management.active_rfqs.slice(0, 2).map((rfq) => (
+                    <div key={rfq.rfq_id} className="p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-semibold text-neutral-900">{rfq.title}</p>
+                        {getStatusBadge(rfq.status)}
                       </div>
+                      <p className="text-xs text-neutral-500">Expires in {rfq.expires_in}</p>
                     </div>
-                    {rfq.admin_note && (
-                      <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-md">
-                        <p className="text-sm text-primary-900">{rfq.admin_note}</p>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-white border border-neutral-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-neutral-900">Support Inbox</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveView('support')}>View All</Button>
+                </div>
+                <div className="space-y-3">
+                  {data.buyer_dashboard.support_inbox.active_threads.slice(0, 2).map((thread) => (
+                    <div key={thread.thread_id} className="p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-semibold text-neutral-900">{thread.subject}</p>
+                        {getStatusBadge(thread.status)}
                       </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
+                      <p className="text-xs text-neutral-500 line-clamp-1">{thread.last_message}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           </div>
         );
@@ -447,66 +548,55 @@ export const BuyerDashboard: React.FC = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">RFQs</h1>
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">RFQ Management</h1>
               <p className="text-neutral-500">Manage your Request for Quotations</p>
             </div>
             <div className="space-y-4">
-              {data.buyer_dashboard.recent_rfqs.map((rfq) => (
+              {data.buyer_dashboard.rfq_management.active_rfqs.map((rfq) => (
                 <Card key={rfq.rfq_id} className="p-6 bg-white border border-neutral-200">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-neutral-900">{rfq.title}</h3>
                         {getStatusBadge(rfq.status)}
+                        {getStatusBadge(rfq.admin_approval_status)}
                       </div>
-                      <p className="text-sm text-neutral-500">RFQ ID: {rfq.rfq_id}</p>
-                      {rfq.created_at && (
-                        <p className="text-xs text-neutral-400 mt-1">Created: {formatDate(rfq.created_at)}</p>
-                      )}
+                      <div className="flex items-center gap-4 text-sm text-neutral-500">
+                        <span>RFQ ID: {rfq.rfq_id}</span>
+                        <span>Posted: {rfq.posted_date}</span>
+                        <span>Expires in: {rfq.expires_in}</span>
+                      </div>
                     </div>
                   </div>
-                  {rfq.admin_note && (
-                    <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-md">
-                      <p className="text-sm text-primary-900">{rfq.admin_note}</p>
-                    </div>
-                  )}
-                  {rfq.attendance_count > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-neutral-700 mb-2">
-                        {rfq.attendance_count} {rfq.attendance_count === 1 ? 'Manufacturer' : 'Manufacturers'} Attending
-                      </p>
-                      {rfq.attendees_preview && rfq.attendees_preview.length > 0 && (
-                        <div className="space-y-2">
-                          {rfq.attendees_preview.map((attendee, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-neutral-50 rounded-md">
+
+                  {/* Manufacturer Bids */}
+                  {rfq.manufacturer_bids && rfq.manufacturer_bids.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-semibold text-neutral-700 mb-3">Manufacturer Bids</h4>
+                      <div className="space-y-3">
+                        {rfq.manufacturer_bids.map((bid, idx) => (
+                          <div key={idx} className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                            <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-neutral-900">{attendee.manufacturer_name}</span>
-                                <div className="flex items-center gap-1">
-                                  <Star className="w-3 h-3 fill-warning-400 text-warning-400" />
-                                  <span className="text-xs text-neutral-600">{attendee.rating}</span>
-                                </div>
+                                <span className="text-sm font-semibold text-neutral-900">{bid.manufacturer_name}</span>
+                                <Badge variant="outline" className="text-xs">ID: {bid.manufacturer_id}</Badge>
                               </div>
-                              <span className="text-sm font-semibold text-primary-600">{attendee.bid_price}</span>
+                              <span className="text-lg font-bold text-primary-600">{bid.bid_price}</span>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {rfq.actions && rfq.actions.length > 0 && (
-                    <div className="flex gap-2 mt-4">
-                      {rfq.actions.includes('view_attendees') && (
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Eye className="w-4 h-4" />
-                          View Attendees
-                        </Button>
-                      )}
-                      {rfq.actions.includes('close_rfq') && (
-                        <Button variant="destructive" size="sm" className="flex items-center gap-2">
-                          <X className="w-4 h-4" />
-                          Close RFQ
-                        </Button>
-                      )}
+                            <div className="flex items-center justify-between mt-3">
+                              <Badge variant={bid.stock_status === 'Available' ? 'default' : 'secondary'} className="text-xs">
+                                {bid.stock_status}
+                              </Badge>
+                              {bid.can_request_sample && (
+                                <Button size="sm" variant="outline" className="flex items-center gap-2">
+                                  <Package className="w-4 h-4" />
+                                  Request Sample
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </Card>
@@ -526,82 +616,177 @@ export const BuyerDashboard: React.FC = () => {
               {data.buyer_dashboard.sample_orders.map((order) => (
                 <Card key={order.order_id} className="p-6 bg-white border border-neutral-200">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-neutral-900 mb-1">{order.fabric_ref}</h3>
-                      <p className="text-sm text-neutral-500">Order ID: {order.order_id}</p>
-                      <p className="text-sm text-neutral-500">Manufacturer: {order.manufacturer}</p>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-neutral-900 mb-2">Order ID: {order.order_id}</h3>
+                      <div className="space-y-1 mb-3">
+                        {order.items.map((item, idx) => (
+                          <p key={idx} className="text-sm text-neutral-600">{item}</p>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-neutral-500">
+                        <span>Tracking: {order.tracking_number}</span>
+                        <span>Courier: {order.courier}</span>
+                        <span className="font-medium text-primary-600">Payment: {order.payment_status}</span>
+                      </div>
                     </div>
                     {getStatusBadge(order.status)}
                   </div>
-                  <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-neutral-700 mb-4">Tracking Timeline</h4>
-                    <div className="space-y-4">
-                      {order.tracking_timeline.map((event, idx) => (
-                        <div key={idx} className="flex gap-4">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-3 h-3 rounded-full ${
-                              event.completed ? 'bg-primary-600' : 'bg-neutral-300 border-2 border-neutral-400'
-                            }`} />
-                            {idx < order.tracking_timeline.length - 1 && (
-                              <div className={`w-0.5 h-12 ${event.completed ? 'bg-primary-600' : 'bg-neutral-300'}`} />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className={`text-sm font-medium ${event.completed ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                                {event.status}
-                              </p>
-                              {event.completed && event.timestamp && (
-                                <Clock className="w-3 h-3 text-neutral-400" />
+
+                  {/* Tracking Timeline */}
+                  {order.tracking_timeline && order.tracking_timeline.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-semibold text-neutral-700 mb-4">Tracking Timeline</h4>
+                      <div className="space-y-4">
+                        {order.tracking_timeline.map((event, idx) => (
+                          <div key={idx} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className={`w-3 h-3 rounded-full ${
+                                event.completed ? 'bg-primary-600' : 'bg-neutral-300 border-2 border-neutral-400'
+                              }`} />
+                              {idx < order.tracking_timeline.length - 1 && (
+                                <div className={`w-0.5 h-12 ${event.completed ? 'bg-primary-600' : 'bg-neutral-300'}`} />
                               )}
                             </div>
-                            {event.timestamp && (
-                              <p className="text-xs text-neutral-500 mb-1">{formatDate(event.timestamp)}</p>
-                            )}
-                            {event.details && (
-                              <p className="text-xs text-neutral-600 mt-1">{event.details}</p>
-                            )}
+                            <div className="flex-1 pb-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className={`text-sm font-medium ${event.completed ? 'text-neutral-900' : 'text-neutral-400'}`}>
+                                  {event.status}
+                                </p>
+                                {event.completed && event.timestamp && (
+                                  <Clock className="w-3 h-3 text-neutral-400" />
+                                )}
+                              </div>
+                              {event.timestamp && (
+                                <p className="text-xs text-neutral-500 mb-1">{formatDate(event.timestamp)}</p>
+                              )}
+                              {event.details && (
+                                <p className="text-xs text-neutral-600 mt-1">{event.details}</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-neutral-200">
-                    <p className="text-xs text-neutral-500">
-                      Fee Status: <span className="font-medium text-neutral-700">{order.fee_status.replace(/_/g, ' ')}</span>
-                    </p>
-                  </div>
+                  )}
+
+                  {order.actions && order.actions.length > 0 && (
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-neutral-200">
+                      {order.actions.includes('mark_received') && (
+                        <Button size="sm" className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Mark Received
+                        </Button>
+                      )}
+                      {order.actions.includes('report_issue') && (
+                        <Button size="sm" variant="outline" className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Report Issue
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
           </div>
         );
 
-      case 'designs':
+      case 'workspace':
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Saved Designs</h1>
-              <p className="text-neutral-500">Your saved mockup designs</p>
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Private Workspace</h1>
+              <p className="text-neutral-500">Your saved mockups and moodboards</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {data.buyer_dashboard.saved_designs.map((design) => (
-                <Card key={design.id} className="p-4 bg-white border border-neutral-200 hover:shadow-lg transition-shadow">
-                  <div className="aspect-video bg-neutral-100 rounded-md mb-3 flex items-center justify-center overflow-hidden">
-                    <ImageIcon className="w-12 h-12 text-neutral-400" />
-                  </div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">{design.name}</h3>
-                  <p className="text-xs text-neutral-500 mb-3">ID: {design.id}</p>
-                  {design.linked_rfq_id && (
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        Linked to {design.linked_rfq_id}
-                      </Badge>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <ExternalLink className="w-3 h-3" />
-                      </Button>
+
+            {/* Saved Mockups */}
+            <div>
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Saved Mockups</h2>
+              {data.buyer_dashboard.private_workspace.saved_mockups.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {data.buyer_dashboard.private_workspace.saved_mockups.map((mockup) => (
+                    <Card key={mockup.id} className="p-4 bg-white border border-neutral-200 hover:shadow-lg transition-shadow">
+                      <div className="aspect-video bg-neutral-100 rounded-md mb-3 flex items-center justify-center overflow-hidden">
+                        <ImageIcon className="w-12 h-12 text-neutral-400" />
+                      </div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">{mockup.name}</h3>
+                      <div className="space-y-1 mb-3">
+                        <p className="text-xs text-neutral-500">Type: {mockup.garment_type}</p>
+                        <p className="text-xs text-neutral-500">Fabric: {mockup.fabric_ref_used}</p>
+                        <p className="text-xs text-neutral-500">Created: {formatDate(mockup.created_at)}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {mockup.actions.includes('download') && (
+                          <Button size="sm" variant="outline" className="flex items-center gap-1">
+                            <Download className="w-3 h-3" />
+                          </Button>
+                        )}
+                        {mockup.actions.includes('attach_to_rfq') && (
+                          <Button size="sm" variant="outline" className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                          </Button>
+                        )}
+                        {mockup.actions.includes('delete') && (
+                          <Button size="sm" variant="outline" className="flex items-center gap-1 text-red-600 hover:text-red-700">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-12 bg-white border border-neutral-200 text-center">
+                  <ImageIcon className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
+                  <p className="text-neutral-500">No saved mockups yet</p>
+                </Card>
+              )}
+            </div>
+
+            {/* Moodboards */}
+            <div className="mt-8">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Moodboards</h2>
+              {data.buyer_dashboard.private_workspace.moodboards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Moodboards would be rendered here */}
+                </div>
+              ) : (
+                <Card className="p-12 bg-white border border-neutral-200 text-center">
+                  <Layers className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
+                  <p className="text-neutral-500">No moodboards yet</p>
+                </Card>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'support':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Support Inbox</h1>
+              <p className="text-neutral-500">Communicate with LinkER Admin</p>
+            </div>
+            <div className="space-y-4">
+              {data.buyer_dashboard.support_inbox.active_threads.map((thread) => (
+                <Card key={thread.thread_id} className="p-6 bg-white border border-neutral-200">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold text-neutral-900">{thread.subject}</h3>
+                        {getStatusBadge(thread.status)}
+                      </div>
+                      <p className="text-sm text-neutral-500 mb-1">Thread ID: {thread.thread_id}</p>
+                      <p className="text-sm text-neutral-500">To: {thread.recipient}</p>
                     </div>
-                  )}
+                  </div>
+                  <div className="p-4 bg-neutral-50 rounded-lg mb-4">
+                    <p className="text-sm text-neutral-700">{thread.last_message}</p>
+                  </div>
+                  <Button className="flex items-center gap-2">
+                    <Send className="w-4 h-4" />
+                    Reply
+                  </Button>
                 </Card>
               ))}
             </div>
@@ -643,7 +828,6 @@ export const BuyerDashboard: React.FC = () => {
                   key={item.id}
                   onClick={() => {
                     setActiveView(item.id);
-                    // Optionally close sidebar on mobile after selection
                     if (window.innerWidth < 1024) {
                       setSidebarOpen(false);
                     }
@@ -667,7 +851,7 @@ export const BuyerDashboard: React.FC = () => {
           <div className="p-4 border-t border-neutral-200">
             <div className="mb-3 p-3 bg-neutral-50 rounded-lg">
               <p className="text-xs text-neutral-500 mb-1 whitespace-nowrap">Logged in as</p>
-              <p className="text-sm font-semibold text-neutral-900 truncate">{user?.name || 'Buyer'}</p>
+              <p className="text-sm font-semibold text-neutral-900 truncate">{data.buyer_dashboard.user_profile.company}</p>
             </div>
             <Button
               variant="ghost"
@@ -701,7 +885,7 @@ export const BuyerDashboard: React.FC = () => {
                 )}
               </Button>
               <div>
-                <p className="text-sm text-neutral-500">Welcome back, {user?.name || 'Buyer'}</p>
+                <p className="text-sm text-neutral-500">Welcome back, {data.buyer_dashboard.user_profile.company}</p>
               </div>
             </div>
           </div>

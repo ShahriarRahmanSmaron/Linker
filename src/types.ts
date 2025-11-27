@@ -40,6 +40,7 @@ export interface ManufacturerFabric {
   swatchImageUrl: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface FAQItem {
