@@ -14,7 +14,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (role: UserRole, email: string, password?: string) => Promise<void>; // Updated signature
+  login: (role: UserRole, email: string, password?: string) => Promise<User | undefined>;
   signup: (email: string, password: string, role: UserRole, company_name?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (role: UserRole, email: string, password?: string) => {
+  const login = async (role: UserRole, email: string, password?: string): Promise<User | undefined> => {
     // Note: 'role' arg is kept for compatibility but the API determines the role
     if (!password) {
       // Fallback for existing mock calls if any remain (should be updated)
@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('token', data.token);
         setUser(data.user_profile);
         toast.success(`Welcome back, ${data.user_profile.name || 'User'}!`);
+        return data.user_profile;
       } else {
         const error = await response.json();
         toast.error(error.msg || 'Login failed');
