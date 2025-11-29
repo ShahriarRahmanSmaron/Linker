@@ -8,15 +8,15 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     role = db.Column(db.String(20), default='buyer')
     company_name = db.Column(db.String(100))
-
+    
 class Fabric(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ref = db.Column(db.String(50))
-    fabric_group = db.Column(db.String(100))
-    fabrication = db.Column(db.String(200))
-    gsm = db.Column(db.String(50))
-    width = db.Column(db.String(50))
-    composition = db.Column(db.String(200))
-    status = db.Column(db.String(20), default='LIVE')
+    ref = db.Column(db.String(50), nullable=False)
+    fabric_group = db.Column(db.String(50))
+    fabrication = db.Column(db.String(100))
+    gsm = db.Column(db.Integer)
+    width = db.Column(db.String(20))
+    composition = db.Column(db.String(100))
+    status = db.Column(db.String(20), default='pending')
     manufacturer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     meta_data = db.Column(db.JSON)

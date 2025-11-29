@@ -42,15 +42,23 @@ TITLE_SLIDE_2_PATH = str(settings.title_slide_2_path)
 
 app = Flask(__name__)
 
-# !!! IMPORTANT CHANGE: Allow all origins for Tunneling (VS Code/Ngrok) !!!
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# Security: Restrict CORS to frontend origins
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}}, supports_credentials=True)
 
 # Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(PROJECT_ROOT, 'instance', 'fabric_sourcing.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-key')
 
-db = SQLAlchemy(app)
+# Security: JWT Secret Key
+app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY')
+if not app.config['JWT_SECRET_KEY']:
+    logger = logging.getLogger(__name__)
+    logger.warning("WARNING: SECRET_KEY not set in environment. Using a random key. Sessions will be invalidated on restart.")
+    app.config['JWT_SECRET_KEY'] = os.urandom(24).hex()
+
+from models import db, User, Fabric
+
+db.init_app(app)
 jwt = JWTManager(app)
 
 # Configure logging
@@ -72,26 +80,6 @@ def log_response_info(response):
         logger.info(f"[API] {request.method} {request.path} -> {response.status_code}")
     return response
 
-# ===== MODELS =====
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-    role = db.Column(db.String(20), default='buyer')
-    company_name = db.Column(db.String(100))
-    
-class Fabric(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    ref = db.Column(db.String(50), nullable=False)
-    fabric_group = db.Column(db.String(50))
-    fabrication = db.Column(db.String(100))
-    gsm = db.Column(db.Integer)
-    width = db.Column(db.String(20))
-    composition = db.Column(db.String(100))
-    status = db.Column(db.String(20), default='pending')
-    manufacturer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    meta_data = db.Column(db.JSON)
-
 # ===== HELPER FUNCTIONS =====
 def clean_group_name(text):
     if not isinstance(text, str): return str(text)
@@ -111,7 +99,6 @@ def find_file(directory, base_filename, extensions=['.jpg', '.png', '.jpeg', '.w
 def apply_mask_to_swatch(swatch_path, mask_path):
     try:
         swatch = PILImage.open(swatch_path).convert('RGBA')
-        mask = PILImage.open(mask_path)
         mask_l = mask.convert('L')
         binary_mask = mask_l.point(lambda p: 255 if p > 200 else 0, '1')
         bbox = binary_mask.getbbox()
@@ -141,7 +128,6 @@ def admin_required():
 class MockupGeneratorV2:
     def __init__(self, fabric_dir, mockup_dir, mask_dir, output_dir):
         self.fabric_dir = fabric_dir
-        self.mockup_dir = mockup_dir
         self.mask_dir = mask_dir
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)

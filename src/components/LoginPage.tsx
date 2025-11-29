@@ -31,13 +31,12 @@ export const LoginPage: React.FC = () => {
 
         try {
             if (isLogin) {
-                await login(role, email, password);
-                // Navigation logic
-                if (role === 'buyer' || email === 'admin@linker.app') {
-                    if (email === 'admin@linker.app') navigate('/admin');
-                    else navigate('/buyer-dashboard');
-                } else {
-                    navigate('/manufacturer-dashboard');
+                const user = await login(role, email, password);
+                // Navigation logic based on returned user role
+                if (user) {
+                    if (user.role === 'admin') navigate('/admin');
+                    else if (user.role === 'buyer') navigate('/buyer-dashboard');
+                    else navigate('/manufacturer-dashboard');
                 }
             } else {
                 await signup(email, password, role);
@@ -116,10 +115,11 @@ export const LoginPage: React.FC = () => {
                     {/* Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-neutral-500 uppercase ml-1">Email Address</label>
+                            <label htmlFor="email" className="text-xs font-bold text-neutral-500 uppercase ml-1">Email Address</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" size={18} />
                                 <input
+                                    id="email"
                                     type="email"
                                     required
                                     value={email}
@@ -131,10 +131,11 @@ export const LoginPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-neutral-500 uppercase ml-1">Password</label>
+                            <label htmlFor="password" className="text-xs font-bold text-neutral-500 uppercase ml-1">Password</label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" size={18} />
                                 <input
+                                    id="password"
                                     type="password"
                                     required
                                     value={password}
