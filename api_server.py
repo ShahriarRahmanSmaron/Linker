@@ -53,7 +53,12 @@ cors_origins = settings.CORS_ALLOWED_ORIGINS.split(',')
 CORS(app, resources={r"/*": {"origins": cors_origins}}, supports_credentials=True)
 
 # Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(PROJECT_ROOT, 'instance', 'fabric_sourcing.db')}"
+# Production: Use DATABASE_URL env var (PostgreSQL recommended for concurrency)
+# Development: Falls back to SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL', 
+    f"sqlite:///{os.path.join(PROJECT_ROOT, 'instance', 'fabric_sourcing.db')}"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Security: JWT Secret Key
@@ -127,6 +132,11 @@ def admin_required():
 
 # ===== API ROUTES =====
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for load balancers and monitoring."""
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/api/fabric-groups')
 @limiter.limit("100 per minute")
 def get_fabric_groups():
@@ -145,12 +155,15 @@ def find_fabrics():
     search_term = request.args.get('search', '').strip()
     filter_group = request.args.get('group', '').strip()
     filter_weight = request.args.get('weight', '').strip()
-    page = int(request.args.get('page', 1))
+    # Stability: Use Flask's type parameter to safely handle invalid input (prevents 500 errors)
+    page = request.args.get('page', 1, type=int)
+    if page < 1:
+        page = 1
     
     # Security: Enforce max limit to prevent DoS
     MAX_LIMIT = 100
-    limit = int(request.args.get('limit', 20))
-    limit = min(limit, MAX_LIMIT)
+    limit = request.args.get('limit', 20, type=int)
+    limit = max(1, min(limit, MAX_LIMIT))
     
     logger.info(f"Search: '{search_term}' | Group: '{filter_group}' | Weight: '{filter_weight}'")
 
@@ -298,24 +311,24 @@ def get_garments():
 @jwt_required()
 @limiter.limit("10 per minute")
 def generate_on_demand():
+    data = request.json
+    fabric_ref = data.get('fabric_ref')
+    mockup_name = data.get('mockup_name')
+    
+    if not fabric_ref or not mockup_name:
+        return jsonify({"success": False, "error": "Missing fabric_ref or mockup_name"}), 400
+    
+    # Security: Validate inputs (prevent path traversal while preserving special characters)
+    # Use os.path.basename to ensure we only get the filename part
+    fabric_ref = os.path.basename(str(fabric_ref))
+    mockup_name = os.path.basename(str(mockup_name))
+    # Reject path traversal attempts
+    if '..' in fabric_ref or '/' in fabric_ref or '\\' in fabric_ref:
+        return jsonify({"success": False, "error": "Invalid fabric_ref: path traversal detected"}), 400
+    if '..' in mockup_name or '/' in mockup_name or '\\' in mockup_name:
+        return jsonify({"success": False, "error": "Invalid mockup_name: path traversal detected"}), 400
+    
     try:
-        data = request.json
-        fabric_ref = data.get('fabric_ref')
-        mockup_name = data.get('mockup_name')
-        
-        if not fabric_ref or not mockup_name:
-            return jsonify({"success": False, "error": "Missing fabric_ref or mockup_name"}), 400
-        
-        # Security: Validate inputs (prevent path traversal while preserving special characters)
-        # Use os.path.basename to ensure we only get the filename part
-        fabric_ref = os.path.basename(str(fabric_ref))
-        mockup_name = os.path.basename(str(mockup_name))
-        # Reject path traversal attempts
-        if '..' in fabric_ref or '/' in fabric_ref or '\\' in fabric_ref:
-            return jsonify({"success": False, "error": "Invalid fabric_ref: path traversal detected"}), 400
-        if '..' in mockup_name or '/' in mockup_name or '\\' in mockup_name:
-            return jsonify({"success": False, "error": "Invalid mockup_name: path traversal detected"}), 400
-            
         generator = MockupGeneratorV2(
             fabric_dir=FABRIC_SWATCH_DIR,
             mockup_dir=MOCKUP_DIR_TEMPLATES,
@@ -344,10 +357,17 @@ def generate_on_demand():
             })
         else:
             return jsonify({"success": False, "error": "Failed to generate mockup. Check if files exist."}), 404
-            
+    
+    # Reliability: Catch specific exceptions for appropriate error responses
+    except (PILImage.UnidentifiedImageError, OSError) as e:
+        logger.warning(f"Invalid image file in mockup generation: {e}")
+        return jsonify({"success": False, "error": "Invalid or corrupt image file"}), 400
+    except MemoryError as e:
+        logger.error(f"Memory error during mockup generation: {e}")
+        return jsonify({"success": False, "error": "Server ran out of memory processing this request"}), 503
     except Exception as e:
-        logger.error(f"Error generating mockup: {e}")
-        return jsonify({"success": False, "error": "An unexpected error occurred."}), 500
+        logger.error(f"Unexpected error generating mockup: {e}")
+        return jsonify({"success": False, "error": "An unexpected server error occurred"}), 500
 
 @app.route('/api/generate-pptx', methods=['POST'])
 @limiter.limit("5 per minute")
@@ -368,7 +388,15 @@ def serve_silhouette(filename): return send_from_directory(SILHOUETTE_DIR, filen
 def serve_swatch(filename): return send_from_directory(FABRIC_SWATCH_DIR, filename)
 
 @app.route('/images/<path:filename>')
-def serve_images(filename): return send_from_directory(IMAGE_DIR, filename)
+def serve_images(filename):
+    # Security: Enforce strict path isolation to prevent traversal attacks
+    safe_filename = secure_filename(filename)
+    if not safe_filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    safe_path = os.path.join(IMAGE_DIR, safe_filename)
+    if not os.path.exists(safe_path):
+        return jsonify({"error": "File not found"}), 404
+    return send_from_directory(IMAGE_DIR, safe_filename)
 
 @app.route('/')
 def serve_index(): return send_from_directory(PROJECT_ROOT, 'index.html')
@@ -508,9 +536,58 @@ def get_current_user():
     if not user: return jsonify({"msg": "User not found"}), 404
     return jsonify({"id": user.id, "email": user.email, "role": user.role, "name": user.company_name}), 200
 
+# ===== CLI COMMANDS =====
+@app.cli.command('create-admin')
+def create_admin():
+    """Create an admin user from environment variables (ADMIN_EMAIL, ADMIN_PASSWORD)."""
+    import click
+    
+    admin_email = os.getenv('ADMIN_EMAIL')
+    admin_password = os.getenv('ADMIN_PASSWORD')
+    admin_company = os.getenv('ADMIN_COMPANY', 'System Admin')
+    
+    if not admin_email or not admin_password:
+        click.echo('Error: ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required.')
+        click.echo('Usage: Set ADMIN_EMAIL and ADMIN_PASSWORD in your .env file or environment.')
+        return
+    
+    # Check if admin already exists
+    existing_user = User.query.filter_by(email=admin_email).first()
+    if existing_user:
+        if existing_user.role == 'admin':
+            click.echo(f'Admin user "{admin_email}" already exists.')
+        else:
+            # Upgrade existing user to admin
+            existing_user.role = 'admin'
+            db.session.commit()
+            click.echo(f'Upgraded existing user "{admin_email}" to admin role.')
+        return
+    
+    # Create new admin user
+    hashed_password = generate_password_hash(admin_password)
+    admin_user = User(
+        email=admin_email,
+        password_hash=hashed_password,
+        role='admin',
+        company_name=admin_company
+    )
+    db.session.add(admin_user)
+    db.session.commit()
+    click.echo(f'Admin user "{admin_email}" created successfully.')
+
 if __name__ == '__main__':
+    # Production: Use gunicorn instead: gunicorn -w 4 -b 0.0.0.0:5000 api_server:app
+    # This block only runs in development mode
     if not os.path.exists(os.path.join(PROJECT_ROOT, 'instance')):
         os.makedirs(os.path.join(PROJECT_ROOT, 'instance'))
     with app.app_context():
         db.create_all()
+    
+    # Warning for production usage
+    if not settings.FLASK_DEBUG:
+        logger.warning(
+            "WARNING: Running Flask development server in non-debug mode. "
+            "For production, use: gunicorn -w 4 -b 0.0.0.0:5000 api_server:app"
+        )
+    
     app.run(host=settings.FLASK_HOST, port=settings.FLASK_PORT, debug=settings.FLASK_DEBUG)

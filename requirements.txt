@@ -17,6 +17,9 @@ flask-limiter
 werkzeug
 psycopg2-binary
 
+# Production WSGI Server
+gunicorn>=21.0.0
+
 # Data Processing
 pandas>=2.0.0
 numpy>=1.24.0
