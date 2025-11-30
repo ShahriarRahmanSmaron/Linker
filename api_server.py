@@ -472,7 +472,9 @@ def signup():
     data = request.json
     email = data.get('email')
     password = data.get('password')
-    role = data.get('role', 'buyer')
+    # Security: Hardcode role to prevent privilege escalation (mass assignment attack)
+    # Admin users must be created through a separate, controlled process
+    role = 'buyer'
     company_name = data.get('company_name', '')
     if not email or not password: return jsonify({"msg": "Email and password required"}), 400
     if User.query.filter_by(email=email).first(): return jsonify({"msg": "Email already exists"}), 400
