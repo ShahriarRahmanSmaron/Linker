@@ -48,6 +48,12 @@ instance/*
 # Scripts
 setup_git.ps1
 
+# AWS/Deployment
+*.pem
+deploy_to_aws.sh
+test_aws_connection.sh
+AWS_DEPLOYMENT_GUIDE.md
+
 # Migrations cache
 migrations/__pycache__/
 migrations/versions/__pycache__/
